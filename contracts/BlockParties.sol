@@ -290,7 +290,7 @@ contract BlockParties is Ownable {
     //  Utility
     //////////////////////////////
 
-    uint256 immutable MAX_UINT = 2**256 - 1;
+    uint256 constant MAX_UINT = 2**256 - 1;
 
     function clamp(uint256 _value, uint256 _min, uint256 _max) pure public returns (uint256) {
         if (_value > _max) {
