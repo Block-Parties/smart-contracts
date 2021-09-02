@@ -48,9 +48,6 @@ contract BlockParties is Ownable {
         mapping(address => uint256) stakes;
         // A running tally of the amount contributed, in wei.
         uint256 totalStakes;
-        // Mapping between every party member and whether or not they've already claimed
-        // the share they're entitled to.
-        mapping(address => bool) claimedShare;
     }
 
     //////////////////////////////
