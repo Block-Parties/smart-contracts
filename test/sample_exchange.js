@@ -36,7 +36,7 @@ describe("Sample Exchange", () => {
         await tx.wait()
 
         expect(await bp.getBalance(1)).to.equal(100)
-        expect(await bp.getGigaStake(1, addrs[0].address)).to.equal('' + (10 ** 9))
+        expect(await bp.getGigaStake(1, addrs[0].address)).to.equal(1 * 10**9)
     })
 
     it("Deposits again", async () => {
@@ -44,15 +44,15 @@ describe("Sample Exchange", () => {
         await tx.wait()
 
         expect(await bp.getBalance(1)).to.equal(200)
-        expect(await bp.getGigaStake(1, addrs[1].address)).to.equal('' + (5 * 10 ** 8))
+        expect(await bp.getGigaStake(1, addrs[0].address)).to.equal('' + (0.5 * 10 ** 9))
+        expect(await bp.getGigaStake(1, addrs[1].address)).to.equal('' + (0.5 * 10 ** 9))
     })
 
     it("Prevents overwithdrawal", async () => {
         await expect(bp.withdraw(1, 200)).to.be.revertedWith("The amount requested exceeds the sender's stake")
     })
 
-
-    it("Allows withdrawals", async () => {
+    it("Supports withdrawals", async () => {
         const preBalance = await addrs[0].getBalance()
         const tx = await bp.connect(addrs[0]).withdraw(1, 100)
         const receipt = await tx.wait()
@@ -60,6 +60,18 @@ describe("Sample Exchange", () => {
 
         expect(await bp.getBalance(1)).to.equal(100)
         expect(postBalance).to.equal('' + (preBalance.add(100).sub(receipt.effectiveGasPrice.mul(receipt.cumulativeGasUsed))))
+
+        expect(await bp.getGigaStake(1, addrs[0].address)).to.equal(0)
+        expect(await bp.getGigaStake(1, addrs[1].address)).to.equal(1 * 10**9)
+    })
+
+    it("Supports deposit after withdrawal", async () => {
+        const tx = await bp.connect(addrs[0]).deposit(1, { value: 100 })
+        await tx.wait()
+
+        expect(await bp.getBalance(1)).to.equal(200)
+        expect(await bp.getGigaStake(1, addrs[0].address)).to.equal(0.5 * 10**9)
+        expect(await bp.getGigaStake(1, addrs[0].address)).to.equal(0.5 * 10**9)
     })
 
     it("Simulates buy and sell", async () => {
@@ -70,5 +82,31 @@ describe("Sample Exchange", () => {
         await t.wait()
 
         expect(await bp.getBalance(1)).to.equal(100)
+    })
+
+    it("Allows withdrawal of profit (1/2)", async () => {
+        const preBalance = await addrs[0].getBalance()
+        const tx = await bp.connect(addrs[0]).withdraw(1, 50)
+        const receipt = await tx.wait()
+        const postBalance = await addrs[0].getBalance()
+
+        expect(postBalance).to.equal('' + (preBalance.add(50).sub(receipt.effectiveGasPrice.mul(receipt.cumulativeGasUsed))))
+
+        expect(await bp.getBalance(1)).to.equal(50)
+        expect(await bp.getGigaStake(1, addrs[0].address)).to.equal(0)
+        expect(await bp.getGigaStake(1, addrs[1].address)).to.equal(1 * 10**9)
+    })
+
+    it("Allows withdrawal of profit (2/2)", async () => {
+        const preBalance = await addrs[1].getBalance()
+        const tx = await bp.connect(addrs[1]).withdraw(1, 50)
+        const receipt = await tx.wait()
+        const postBalance = await addrs[1].getBalance()
+
+        expect(postBalance).to.equal('' + (preBalance.add(50).sub(receipt.effectiveGasPrice.mul(receipt.cumulativeGasUsed))))
+
+        expect(await bp.getBalance(1)).to.equal(0)
+        expect(await bp.getGigaStake(1, addrs[0].address)).to.equal(0)
+        expect(await bp.getGigaStake(1, addrs[1].address)).to.equal(0)
     })
 })
