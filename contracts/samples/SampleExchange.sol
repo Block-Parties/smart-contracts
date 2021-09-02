@@ -14,6 +14,7 @@ contract SampleExchange is IPartyHost {
 
     enum State {
         OPEN,
+        LISTED, // not used in this example, since resale is immediate
         SOLD,
         FAILED
     }
@@ -50,7 +51,7 @@ contract SampleExchange is IPartyHost {
     ) external view override returns (uint256) {
         require(
             assets[_assetId].state == State.OPEN,
-            "Party is closed to investments"
+            "Party is closed to new investments"
         );
 
         uint256 _rem = assets[_assetId].buyPrice - _amount;
@@ -67,8 +68,8 @@ contract SampleExchange is IPartyHost {
         uint256 _amount
     ) external view override returns (uint256) {
         require(
-            assets[_assetId].state == State.OPEN,
-            "Party is not accepting withdrawals now"
+            assets[_assetId].state != State.LISTED,
+            "Cannot withdraw while asset is listed for resale"
         );
         return _amount;
     }
@@ -78,6 +79,7 @@ contract SampleExchange is IPartyHost {
         bp.requestFunds(_assetId);
     }
 
+    /// @dev simulate a resale at half the price of the buy
     function sell(uint256 _assetId) external {
         IBlockParties bp = IBlockParties(BlockPartiesContract);
         assets[_assetId].state = State.SOLD;
