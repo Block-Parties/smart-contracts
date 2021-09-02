@@ -97,26 +97,26 @@ contract BlockParties is Ownable {
     /// @notice Deposit into a party, if permitted by the host.
     function deposit(uint256 _partyId) external payable {
         IPartyHost host = IPartyHost(parties[_partyId].assetRef.hostAddress);
-        uint256 maxAcceptedDeposit = host.canDeposit(
+        uint256 depositAmount = host.canDeposit(
             parties[_partyId].assetRef.assetId,
             msg.sender,
             msg.value
         );
-        require(maxAcceptedDeposit > 0, "Party host rejected the deposit");
+        require(depositAmount > 0, "Party host rejected the deposit");
         require(
-            msg.value >= maxAcceptedDeposit,
+            msg.value >= depositAmount,
             "Party host's canDeposit function is incorrectly implemented"
         );
 
         parties[_partyId].stakes[msg.sender] +=
-            maxAcceptedDeposit *
+            depositAmount *
             parties[_partyId].returnMultiplier;
         parties[_partyId].totalStakes +=
-            maxAcceptedDeposit *
+            depositAmount *
             parties[_partyId].returnMultiplier;
-        parties[_partyId].balance += maxAcceptedDeposit;
+        parties[_partyId].balance += depositAmount;
 
-        uint256 excess = msg.value - maxAcceptedDeposit;
+        uint256 excess = msg.value - depositAmount;
 
         if (excess > 0) {
             (bool sent, ) = msg.sender.call{value: excess}(""); // send excess back to depositor
@@ -159,25 +159,25 @@ contract BlockParties is Ownable {
         );
 
         IPartyHost host = IPartyHost(parties[_partyId].assetRef.hostAddress);
-        uint256 acceptableWithdrawalAmount = host.canWithdraw(
+        uint256 withdrawalAmount = host.canWithdraw(
             parties[_partyId].assetRef.assetId,
             msg.sender,
             _amount
         );
         require(
-            acceptableWithdrawalAmount > 0,
+            withdrawalAmount > 0,
             "Party host rejected the withdrawal"
         );
 
         parties[_partyId].stakes[msg.sender] -=
-            acceptableWithdrawalAmount /
+            withdrawalAmount *
             parties[_partyId].returnMultiplier;
         parties[_partyId].totalStakes -=
-            acceptableWithdrawalAmount /
+            withdrawalAmount *
             parties[_partyId].returnMultiplier;
-        parties[_partyId].balance -= acceptableWithdrawalAmount;
+        parties[_partyId].balance -= withdrawalAmount;
 
-        (bool sent, ) = msg.sender.call{value: acceptableWithdrawalAmount}("");
+        (bool sent, ) = msg.sender.call{value: withdrawalAmount}("");
         require(sent, "Failed to send Ether");
 
         emit Withdrew(_partyId, msg.sender, _amount);
@@ -240,9 +240,10 @@ contract BlockParties is Ownable {
             "Caller is not a whitelisted Party host"
         );
 
-        // add 1 to avoid division by zero.
-        // considering these values are in wei, this should generally have a negligible effect on stakes.
-        parties[_partyId].returnMultiplier /= (msg.value + 1);
+        // clamp to avoid division by 0, in the case that 0 funds are given.
+        // in such cases, while the returnMultiplier is unaffected, the balance
+        // remains 0, and the end result is equivalent.
+        parties[_partyId].returnMultiplier /= clamp(msg.value, 1, MAX_UINT);
         parties[_partyId].balance += msg.value;
     }
 
@@ -261,6 +262,8 @@ contract BlockParties is Ownable {
         view
         returns (uint256)
     {
+        if (parties[_partyId].totalStakes == 0) return 0;
+
         return
             (parties[_partyId].stakes[_member] * 1_000_000_000) /
             parties[_partyId].totalStakes;
@@ -281,5 +284,21 @@ contract BlockParties is Ownable {
     /// @notice Returns whether the contract at hostAddress has been whitelisted by BlockParties.
     function isWhitelisted(address hostAddress) external view returns (bool) {
         return hostWhitelist[hostAddress];
+    }
+
+    //////////////////////////////
+    //  Utility
+    //////////////////////////////
+
+    uint256 immutable MAX_UINT = 2**256 - 1;
+
+    function clamp(uint256 _value, uint256 _min, uint256 _max) pure public returns (uint256) {
+        if (_value > _max) {
+            return _max;
+        } else if (_value < _min) {
+            return _min;
+        } else {
+            return _value;
+        }
     }
 }
