@@ -324,7 +324,7 @@ contract WyvernExchange is Ownable, IPartyHost, IERC721Receiver {
     }
 
     /// @notice Return the funds to BlockParties contract so they can be claimed.
-    /// @dev This method performs a check to verify that
+    ///         Requires that the party have either bought and resold the asset, or failed.
     function returnFunds(uint256 _assetId) external {
         // protect against multiple claims
         require(
@@ -365,7 +365,7 @@ contract WyvernExchange is Ownable, IPartyHost, IERC721Receiver {
             return;
         }
 
-        require(false, "Funds can only be returned after asset sold or failed");
+        revert("Funds can only be returned after asset sold or failed");
     }
 
     /// @notice Allows the contract to receive ERC721 tokens.
