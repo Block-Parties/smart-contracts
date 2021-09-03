@@ -55,13 +55,25 @@ contract BlockParties is Ownable {
     //////////////////////////////
 
     /// @notice New party was created.
-    event Created(uint256 partyId, address hostAddress, uint256 assetId);
+    event Created(
+        uint256 indexed partyId,
+        address indexed hostAddress,
+        uint256 indexed assetId
+    );
 
     /// @notice An investor contributed to a party.
-    event Deposited(uint256 partyId, address depositor, uint256 amount);
+    event Deposited(
+        uint256 indexed partyId,
+        address indexed depositor,
+        uint256 amount
+    );
 
     /// @notice An investor withdrew from a party.
-    event Withdrew(uint256 partyId, address withdrawer, uint256 amount);
+    event Withdrew(
+        uint256 indexed partyId,
+        address indexed withdrawer,
+        uint256 amount
+    );
 
     //////////////////////////////
     //  State Modifying Functions
@@ -164,10 +176,7 @@ contract BlockParties is Ownable {
             msg.sender,
             _amount
         );
-        require(
-            withdrawalAmount > 0,
-            "Party host rejected the withdrawal"
-        );
+        require(withdrawalAmount > 0, "Party host rejected the withdrawal");
 
         parties[_partyId].stakes[msg.sender] -=
             withdrawalAmount *
@@ -292,7 +301,11 @@ contract BlockParties is Ownable {
 
     uint256 constant MAX_UINT = 2**256 - 1;
 
-    function clamp(uint256 _value, uint256 _min, uint256 _max) pure public returns (uint256) {
+    function clamp(
+        uint256 _value,
+        uint256 _min,
+        uint256 _max
+    ) public pure returns (uint256) {
         if (_value > _max) {
             return _max;
         } else if (_value < _min) {
