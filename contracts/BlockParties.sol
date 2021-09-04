@@ -99,7 +99,7 @@ contract BlockParties is Ownable {
         Party storage party = parties[++id];
         party.assetRef.hostAddress = msg.sender;
         party.assetRef.assetId = id;
-        party.returnMultiplier = 1_000_000_000;
+        party.returnMultiplier = 10**18;
 
         emit Created(id, msg.sender, id);
 
