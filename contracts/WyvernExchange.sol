@@ -368,6 +368,11 @@ contract WyvernExchange is Ownable, IPartyHost, IERC721Receiver {
         revert("Funds can only be returned after asset sold or failed");
     }
 
+    /// @notice Manually mark a party as failed. Intended for special circumstances.
+    function markFailed(uint256 _asetId) external onlyOwner {
+        assets[_asetId].state = State.FAILED;
+    }
+
     /// @notice Allows the contract to receive ERC721 tokens.
     function onERC721Received(
         address,
@@ -377,5 +382,21 @@ contract WyvernExchange is Ownable, IPartyHost, IERC721Receiver {
     ) external override returns (bytes4) {
         emit TokenReceived(msg.sender, _tokenId);
         return this.onERC721Received.selector;
+    }
+
+    /////////////
+    // Getters
+    /////////////
+
+    function getState(uint256 _assetId) external view returns (State) {
+        return assets[_assetId].state;
+    }
+
+    function getBuyPrice(uint256 _assetId) external view returns (uint256) {
+        return assets[_assetId].buyPrice;
+    }
+
+    function getResalePrice(uint256 _assetId) external view returns (uint256) {
+        return assets[_assetId].resalePrice;
     }
 }
