@@ -212,9 +212,6 @@ contract WyvernExchange is Ownable, IPartyHost, IERC721Receiver {
             "insufficient funds pooled"
         );
 
-        // sanity check
-        require(_data.calldataBuy.length == 100, "The calldata is not correct");
-
         // unpack calldata
         DecomposedCallData memory callData;
         (
@@ -279,7 +276,6 @@ contract WyvernExchange is Ownable, IPartyHost, IERC721Receiver {
             ) == address(this),
             "Asset has not yet been transferred to contract"
         );
-        require(_data.callData.length == 100, "The calldata is not correct");
 
         // unpack calldata
         DecomposedCallData memory callData;
